@@ -61,5 +61,5 @@ func StreamKey(w http.ResponseWriter, r *http.Request) {
 
 func init() {
 	// FIXME: need to use failover client
-	rinst = redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	rinst = redis.NewClient(&redis.Options{Addr: "localhost:6379", DB: 1})
 }
