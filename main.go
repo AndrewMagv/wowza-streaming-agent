@@ -22,19 +22,6 @@ var (
 	}
 )
 
-func init() {
-	cli.AppHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS]{{end}}
-
-{{.Usage}}
-
-Version: {{.Version}}
-
-{{if .Flags}}Options:
-	{{range .Flags}}{{.}}
-	{{end}}{{end}}
-`
-}
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "wowza-agent"
@@ -56,15 +43,21 @@ func Agent(c *cli.Context) {
 	)
 
 	if advertise == "" {
-		cli.ShowAppHelp(c)
-		log.Error("Required flag --advertise missing")
-		os.Exit(1)
+		advertise, err := getNodeInfo("public_ipv4")
+		if err != nil {
+			cli.ShowAppHelp(c)
+			log.Warning(err)
+			log.Error("Required flag --advertise missing")
+			os.Exit(1)
+		} else {
+			service.Advertise = advertise
+		}
 	} else {
 		service.Advertise = advertise
 	}
 
 	if addr != "" {
-		log.WithFields(log.Fields{"addr": addr}).Info("API endpoint begin")
+		log.WithFields(log.Fields{"addr": addr, "advertise": service.Advertise}).Info("API endpoint begin")
 		go runAPIEndpoint(addr, stop)
 		<-stop // we should never reach pass this point
 	} else {
