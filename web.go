@@ -27,10 +27,10 @@ func runAPIEndpoint(addr string, stop chan<- struct{}) {
 	log.Error(server.ListenAndServe())
 }
 
-func getNodeInfo(k string) (string, error) {
+func getNodeInfo() (map[string]string, error) {
 	resp, err := http.Get(DefaultInfoURI)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -38,10 +38,8 @@ func getNodeInfo(k string) (string, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	if err != nil {
-		return "", err
-	} else if v, ok := info[k]; !ok {
-		return "", ErrNodeInfoNotFound
+		return nil, err
 	} else {
-		return v, nil
+		return info, nil
 	}
 }

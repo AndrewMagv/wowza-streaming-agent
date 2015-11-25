@@ -15,6 +15,10 @@ import (
 var (
 	Advertise string
 
+	Node string
+
+	Host string
+
 	rinst *redis.Client // TODO: use ClusterClient?
 
 	exist = errors.New("exist")
@@ -22,6 +26,7 @@ var (
 
 type StreamKeyResponse struct {
 	Endpoint string
+	Node     string
 	Key      string
 }
 
@@ -52,11 +57,12 @@ func StreamKey(w http.ResponseWriter, r *http.Request) {
 	// send it back to user
 	w.Header().Add("Content-Type", "application/json")
 	enc.Encode(&StreamKeyResponse{
-		Endpoint: Advertise,
+		Endpoint: Host,
+		Node:     Node,
 		Key:      streamkey,
 	})
 
-	log.WithFields(log.Fields{"key": streamkey, "origin": Advertise}).Info("req")
+	log.WithFields(log.Fields{"key": streamkey, "node": Node, "host": Host, "origin": Advertise}).Info("req")
 }
 
 func init() {
