@@ -24,10 +24,16 @@ var (
 	exist = errors.New("exist")
 )
 
+type StreamKeyAuth struct {
+	Username string `json: "username"`
+	Password string `json: "password"`
+}
+
 type StreamKeyResponse struct {
 	Endpoint string
 	Node     string
 	Key      string
+	Auth     StreamKeyAuth
 }
 
 func genSteamkey() (key string) {
@@ -60,6 +66,7 @@ func StreamKey(w http.ResponseWriter, r *http.Request) {
 		Endpoint: Host,
 		Node:     Node,
 		Key:      streamkey,
+		Auth:     StreamKeyAuth{},
 	})
 
 	log.WithFields(log.Fields{"key": streamkey, "node": Node, "host": Host, "origin": Advertise}).Info("req")
