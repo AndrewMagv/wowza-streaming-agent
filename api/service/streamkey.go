@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+const (
+	DEFAULT_STREAM_DURATION = 3 * time.Hour
+)
+
 var (
 	Advertise string
 
@@ -36,11 +40,11 @@ type StreamKeyResponse struct {
 	Auth     StreamKeyAuth
 }
 
-func genSteamkey() (key string) {
+func genStreamKey(exp time.Duration) (key string) {
 	var ok bool
 	for err := exist; err != nil; {
 		key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
-		ok, err = rinst.SetNX(key, Advertise, 0).Result()
+		ok, err = rinst.SetNX(key, Advertise, exp).Result()
 		if !ok {
 			err = exist
 		}
@@ -53,23 +57,42 @@ func StreamKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", 403)
 		return
 	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Bad Request", 403)
+		return
+	}
 
 	var (
 		enc = json.NewEncoder(w)
 
-		streamkey = genSteamkey()
+		expStr = r.Form.Get("duration")
+
+		expire time.Duration
 	)
+
+	if expStr != "" {
+		if exp, err := time.ParseDuration(expStr); err != nil {
+			http.Error(w, "Bad Request", 403)
+			return
+		} else {
+			expire = exp
+		}
+	} else {
+		expire = DEFAULT_STREAM_DURATION
+	}
+
+	resp := &StreamKeyResponse{
+		Endpoint: Host,
+		Node:     Node,
+		Key:      genStreamKey(expire),
+		Auth:     StreamKeyAuth{},
+	}
 
 	// send it back to user
 	w.Header().Add("Content-Type", "application/json")
-	enc.Encode(&StreamKeyResponse{
-		Endpoint: Host,
-		Node:     Node,
-		Key:      streamkey,
-		Auth:     StreamKeyAuth{},
-	})
+	enc.Encode(resp)
 
-	log.WithFields(log.Fields{"key": streamkey, "node": Node, "host": Host, "origin": Advertise}).Info("req")
+	log.WithFields(log.Fields{"key": resp.Key, "node": resp.Node, "host": resp.Endpoint, "origin": Advertise}).Info("req")
 }
 
 func init() {
