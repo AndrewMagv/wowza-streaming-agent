@@ -22,6 +22,11 @@ type NodeInfo struct {
 }
 
 func Info(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", 403)
+		return
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(NodeInfo{
