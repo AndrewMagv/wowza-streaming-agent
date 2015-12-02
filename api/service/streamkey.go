@@ -52,6 +52,25 @@ func genStreamKey(exp time.Duration) (key string) {
 	return
 }
 
+func genUserPass(exp time.Duration) (auth StreamKeyAuth) {
+	var (
+		user string
+		pass string = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))[:8]
+
+		ok bool
+	)
+	for err := exist; err != nil; {
+		user = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))[:8]
+		ok, err = rinst.SetNX(user, pass, exp).Result()
+		if !ok {
+			err = exist
+		} else {
+			auth = StreamKeyAuth{user, pass}
+		}
+	}
+	return
+}
+
 func StreamKey(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "method not allowed", 403)
@@ -85,7 +104,7 @@ func StreamKey(w http.ResponseWriter, r *http.Request) {
 		Endpoint: Host,
 		Node:     Node,
 		Key:      genStreamKey(expire),
-		Auth:     StreamKeyAuth{},
+		Auth:     genUserPass(expire),
 	}
 
 	// send it back to user
