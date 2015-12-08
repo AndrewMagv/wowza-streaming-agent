@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultInfoURI = "http://localhost:29091/info"
+	DefaultInfoURI = "http://ambassador:29091/info"
 )
 
 var (
